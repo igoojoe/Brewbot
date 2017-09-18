@@ -1,11 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import DB from './db';
 
 // load config
 dotenv.config();
 
 // init express
 const app = express();
+
+const db = new DB(process.env.DB_HOST, process.env.DB_USER, process.env.DB_PASS);
 
 app.get('/', (req, res) => {
   res.send('Hello world!');
