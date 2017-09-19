@@ -15,6 +15,17 @@ fs.readdirSync('node_modules')
 module.exports = {
   entry: './src/index.js',
   target: 'node',
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
+  },
   output: {
     path: path.join(__dirname, 'build'),
     filename: 'server.js'
