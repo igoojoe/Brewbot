@@ -29,8 +29,9 @@ app.get('/', (req, res) => {
 });
 
 app.post('/request-round', (req, res) => {
-  console.log(req.body);
-  res.sendStatus(200);
+  const data = JSON.parse(req.body.payload);
+  const drink = data.actions[0].selected_options[0].value;
+  res.send(`Got: ${drink}`);
 });
 
 app.get('/user/:id', (req, res) => {
