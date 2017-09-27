@@ -3,6 +3,7 @@
     "extends": "airbnb-base",
     "rules": {
         "no-console": "off",
-        "object-curly-newline": "off"
+        "object-curly-newline": "off",
+        "eol-last": "off"
     }
 }
