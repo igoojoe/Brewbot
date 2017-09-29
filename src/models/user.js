@@ -121,6 +121,7 @@ class User {
 
   /**
    * Converts a SQL row into a User object
+   * @param {BinaryRow} sqlRow - Row returned from an SQL query
    * @returns {User} this
    */
   fromSQL(sqlRow) {
