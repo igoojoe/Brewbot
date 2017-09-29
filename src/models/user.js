@@ -1,7 +1,13 @@
 import request from 'request-promise-native';
 import DB from '../db';
 
-/** Class representing a user */
+/**
+ * Class representing a user
+ * @property {number} id - Database ID
+ * @property {string} slack_id  Slack user ID
+ * @property {number} team - Team ID
+ * @property {string} name - Slack username
+ */
 class User {
   get uid() {
     return this.id;
