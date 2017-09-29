@@ -22,6 +22,8 @@ class User {
       result = await this.lookup(this.id);
     } else if (this.slack_id) {
       result = await this.lookupSlack(this.slack_id);
+    } else {
+      throw new Error('No ID or Slack ID specified. Set User.id or User.slack_id');
     }
 
     return result;
@@ -34,7 +36,7 @@ class User {
    */
   async lookupID(id) {
     if (typeof id !== 'number') {
-      return new Error('ID not valid');
+      throw new Error('ID not valid');
     }
 
     const db = new DB();
@@ -45,7 +47,7 @@ class User {
       return this.fromSQL(result);
     }
 
-    return new Error(`User with ID ${id} not found`);
+    throw new Error(`User with ID ${id} not found`);
   }
 
   /**
@@ -54,14 +56,19 @@ class User {
    * @returns {Promise<User>} User object with the data, same as this
    */
   async lookupSlack(slackId) {
-    if (typeof slackId.length < 8) {
-      return new Error('ID not valid');
+    if (typeof slackId !== 'string' || slackId.length < 8) {
+      throw new Error('Slack ID not valid');
     }
 
     const db = new DB();
     const dbResult = await db.execute('SELECT * FROM users WHERE slack_id = ?', [slackId]);
     const result = dbResult[0][0];
-    return this.fromSQL(result);
+
+    if (result) {
+      return this.fromSQL(result);
+    }
+
+    throw new Error(`User with Slack ID (${slackId}) not found`);
   }
 
 
@@ -158,7 +165,7 @@ class User {
         method: 'POST',
         uri: 'https://slack.com/api/chat.postMessage',
         form: {
-          //token: process.env.TOKEN,
+          token: process.env.TOKEN,
           channel: imID,
           ...messageData,
         },

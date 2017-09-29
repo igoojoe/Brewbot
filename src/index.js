@@ -86,6 +86,18 @@ app.get('/team/users', (req, res) => {
   }).catch(err => res.send(err));
 });
 
+app.get('/user/:slack/sendMenu', (req, res) => {
+  const user = new User();
+  user.slack_id = req.params.slack;
+  user.lookup().then(() => {
+    user.sendDrinkRequest();
+    res.sendStatus(200);
+  }).catch((err) => {
+    console.log(err);
+    res.status(500).send(err.message);
+  });
+});
+
 // Start brewbot on port 3000
 app.listen(process.env.API_PORT, () => {
   console.log(`☕️  Brewbot now available on port ${process.env.API_PORT}`);
