@@ -2,6 +2,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import request from 'request-promise-native';
 import dotenv from 'dotenv';
+
+import Botkit from 'botkit';
+
 import DB from './db';
 import User from './models/user';
 
@@ -10,7 +13,6 @@ dotenv.config();
 
 // init express
 const app = express();
-
 const db = new DB();
 
 try {
@@ -18,6 +20,21 @@ try {
 } catch (err) {
   console.log(err);
 }
+
+// Setup botkit
+const controller = Botkit.slackbot({ debug: true });
+const bot = controller.spawn({ token: process.env.TOKEN }).startRTM();
+
+
+controller.hears(['hello', 'hi'], 'direct_message, direct_mention', (bot, message) => {
+  controller.storage.users.get(message.user, (err, user) => {
+    if (user && user.name) {
+      bot.reply(message, 'Hello ' + user.name + '!!');
+    } else {
+      bot.reply(message, 'Hello.');
+    }
+  });
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
