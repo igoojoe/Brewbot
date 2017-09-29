@@ -4,6 +4,8 @@
     "rules": {
         "no-console": "off",
         "object-curly-newline": "off",
-        "eol-last": "off"
+        "eol-last": "off",
+        "no-plusplus": "off",
+        "comma-dangle": "off"
     }
 }

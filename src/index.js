@@ -46,6 +46,10 @@ app.get('/user/:id', (req, res) => {
   });
 });
 
+/**
+ * Gets a list of users in the current team
+ * @returns {User[]} Array of Users
+ */
 async function getUsers() {
   const body = await request({
     method: 'POST',
@@ -56,62 +60,30 @@ async function getUsers() {
     },
   });
   const usersraw = JSON.parse(body);
-  let users = [];
-  
+  const users = [];
+
   if (usersraw.ok) {
     for (let i = 0; i < usersraw.members.length; i++) {
       const user = usersraw.members[i];
       if (user.presence === 'active' && user.name.indexOf('bot') < 0) {
-        let userObj = new User();
+        const userObj = new User();
         userObj.name = user.name;
         userObj.slack_id = user.id;
         userObj.team = user.team_id;
 
-        await userObj.sync();
-
-        if (user.name == 'joe') {
-          userObj.sendMessage({
-            text: 'Pick a drink',
-            response_type: 'ephemeral',
-            attachments: [
-              {
-                text: 'Select your drink',
-                fallback: 'It looks like your device doesn\'t support our fancy menu technology',
-                color: '#3AA3E3',
-                attachment_type: 'default',
-                callback_id: 'request-round',
-                actions: [
-                  {
-                    name: 'drink-list',
-                    text: 'Pick a drink...',
-                    type: 'select',
-                    options: [
-                      {
-                        text: 'Tea',
-                        value: 'tea'
-                      },
-                      {
-                        text: 'Coffee',
-                        value: 'coffee'
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          });
-        }
-
-        users.push(userObj);
+        users.push(userObj.sync()); // push promise, resolve later
       }
     }
   }
 
-  return users;
+  return Promise.all(users);
 }
 
 app.get('/team/users', (req, res) => {
-  getUsers().then(users => res.send(users)).catch(err => res.send(err));
+  getUsers().then((users) => {
+    console.log(users);
+    res.send(users);
+  }).catch(err => res.send(err));
 });
 
 // Start brewbot on port 3000

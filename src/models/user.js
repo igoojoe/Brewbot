@@ -1,6 +1,7 @@
 import request from 'request-promise-native';
 import DB from '../db';
 
+/** Class representing a user */
 class User {
   get uid() {
     return this.id;
@@ -10,31 +11,59 @@ class User {
     this.id = parseInt(newId, 10);
   }
 
+  /**
+   * Gets the user data from the database. Requires this.id or this.slack_id set
+   * @returns {Promise<User>} User object with the data, same as this
+   */
   async lookup() {
-    if (typeof this.id !== 'number') {
-      return new Error('ID not valid');
-    }
+    let result = null;
 
-    const db = new DB();
-    const dbResult = await db.execute('SELECT * FROM users WHERE id = ?', [this.id]);
-    const result = dbResult[0][0];
-    this.fromSQL(result);
+    if (this.id) {
+      result = await this.lookup(this.id);
+    } else if (this.slack_id) {
+      result = await this.lookupSlack(this.slack_id);
+    }
 
     return result;
   }
 
-  async lookupSlack() {
-    if (typeof this.slack_id.length < 8) {
+  /**
+   * Get user data from database by row ID
+   * @param {number} id - ID of database row
+   * @returns {Promise<User>} User object with the data, same as this
+   */
+  async lookupID(id) {
+    if (typeof id !== 'number') {
       return new Error('ID not valid');
     }
 
     const db = new DB();
-    const dbResult = await db.execute('SELECT * FROM users WHERE slack_id = ?', [this.slack_id]);
+    const dbResult = await db.execute('SELECT * FROM users WHERE id = ?', [id]);
     const result = dbResult[0][0];
-    this.fromSQL(result);
-    
-    return result;
+
+    if (result) {
+      return this.fromSQL(result);
+    }
+
+    return new Error(`User with ID ${id} not found`);
   }
+
+  /**
+   * Get user data from database by Slack ID
+   * @param {string} slackId - User's Slack ID
+   * @returns {Promise<User>} User object with the data, same as this
+   */
+  async lookupSlack(slackId) {
+    if (typeof slackId.length < 8) {
+      return new Error('ID not valid');
+    }
+
+    const db = new DB();
+    const dbResult = await db.execute('SELECT * FROM users WHERE slack_id = ?', [slackId]);
+    const result = dbResult[0][0];
+    return this.fromSQL(result);
+  }
+
 
   async addTeam() {
     const db = new DB();
@@ -53,6 +82,10 @@ class User {
     return this.team;
   }
 
+  /**
+   * Adds the current user to the database if needed
+   * @returns {Promise<User>} User object with the data
+   */
   async addToDB() {
     const db = new DB();
 
@@ -68,29 +101,36 @@ class User {
       return this;
     }
 
-    return exists;
+    return this.fromSQL(exists[0][0]);
   }
 
+  /**
+   * Gets user data from database if exists, adds if it doesn't.
+   * A combination of {@link User#lookup} and {@link User#addToDB}
+   * @returns {Promise<User>} User object with the data
+   */
   async sync() {
-    let result = null;
-
-    if (this.id) {
-      result = await this.lookup();
-    } else if (this.slack_id) {
-      result = await this.lookupSlack();
-    }
+    const result = await this.lookup();
 
     if (!result) {
       return this.addToDB();
     }
-    
+
     return result;
   }
 
+  /**
+   * Converts a SQL row into a User object
+   * @returns {User} this
+   */
   fromSQL(sqlRow) {
-    Object.assign(this, sqlRow);
+    return Object.assign(this, sqlRow);
   }
 
+  /**
+   * Sends a direct message to the user
+   * @param {Object} data - Slack message data
+   */
   async sendMessage(data) {
     const im = await request({
       method: 'POST',
@@ -106,21 +146,61 @@ class User {
     if (imParsed.ok) {
       const imID = imParsed.channel.id;
 
-      let messageData = data;
+      const messageData = data;
       if (messageData.attachments) {
         messageData.attachments = JSON.stringify(messageData.attachments);
       }
 
-      /*await request({
+      console.log(messageData);
+
+      await request({
         method: 'POST',
         uri: 'https://slack.com/api/chat.postMessage',
         form: {
-          token: process.env.TOKEN,
+          //token: process.env.TOKEN,
           channel: imID,
           ...messageData,
         },
-      });*/
+      });
     }
+  }
+
+  /**
+   * Sends a menu of drinks for the user to pick from
+   */
+  async sendDrinkRequest() {
+    const message = {
+      text: 'Pick a drink',
+      response_type: 'ephemeral',
+      attachments: [
+        {
+          text: 'Select your drink',
+          fallback: 'It looks like your device doesn\'t support our fancy menu technology',
+          color: '#3AA3E3',
+          attachment_type: 'default',
+          callback_id: 'request-round',
+          actions: [
+            {
+              name: 'drink-list',
+              text: 'Pick a drink...',
+              type: 'select',
+              options: [
+                {
+                  text: 'Tea',
+                  value: 'tea'
+                },
+                {
+                  text: 'Coffee',
+                  value: 'coffee'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    return this.sendMessage(message);
   }
 }
 

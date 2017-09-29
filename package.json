@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack && node build/server.js"
+    "start": "webpack && node build/server.js",
+    "docs": "jsdoc -d docs -r src"
   },
   "author": "",
   "license": "ISC",
@@ -26,6 +27,7 @@
     "eslint": "^4.6.1",
     "eslint-config-airbnb-base": "^12.0.0",
     "eslint-plugin-import": "^2.7.0",
+    "jsdoc": "^3.5.5",
     "source-map-support": "^0.4.18",
     "webpack": "^3.5.6"
   }
