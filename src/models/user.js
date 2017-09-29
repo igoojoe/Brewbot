@@ -32,7 +32,7 @@ class User {
     const dbResult = await db.execute('SELECT * FROM users WHERE slack_id = ?', [this.slack_id]);
     const result = dbResult[0][0];
     this.fromSQL(result);
-
+    
     return result;
   }
 
@@ -72,13 +72,19 @@ class User {
   }
 
   async sync() {
+    let result = null;
+
     if (this.id) {
-      return this.lookup();
+      result = await this.lookup();
     } else if (this.slack_id) {
-      return this.lookupSlack();
+      result = await this.lookupSlack();
     }
 
-    return this.addToDB();
+    if (!result) {
+      return this.addToDB();
+    }
+    
+    return result;
   }
 
   fromSQL(sqlRow) {
@@ -105,7 +111,7 @@ class User {
         messageData.attachments = JSON.stringify(messageData.attachments);
       }
 
-      await request({
+      /*await request({
         method: 'POST',
         uri: 'https://slack.com/api/chat.postMessage',
         form: {
@@ -113,7 +119,7 @@ class User {
           channel: imID,
           ...messageData,
         },
-      });
+      });*/
     }
   }
 }
